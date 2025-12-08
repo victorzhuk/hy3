@@ -1,12 +1,13 @@
 # Changelog
 
-# Upcoming
+# hl0.52.2 and before
 
-- Added `active_alt_monitor` tab bar color options.
+- Added support for Hyprland 0.52.2
+- Synced with upstream: account for focusState changes, xwayland work area, layout render hints
 
 # hl0.52.0 and before
 
-- Only compatibility fixes.
+- Added `active_alt_monitor` tab bar color options.
 
 # hl0.51.0 and before
 
