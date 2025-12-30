@@ -4,11 +4,13 @@
 
 #include <bits/ranges_util.h>
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/defines.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprutils/math/Box.hpp>
 
+#include "log.hpp"
 #include "Hy3Layout.hpp"
 #include "Hy3Node.hpp"
 #include "globals.hpp"
@@ -176,12 +178,12 @@ void Hy3Node::focus(bool warp) {
 	case Hy3NodeType::Window: {
 		auto window = this->data.as_window();
 		window->setHidden(false);
-		g_pCompositor->focusWindow(window);
+		Desktop::focusState()->fullWindowFocus(window);
 		if (warp) Hy3Layout::warpCursorToBox(window->m_position, window->m_size);
 		break;
 	}
 	case Hy3NodeType::Group: {
-		g_pCompositor->focusWindow(nullptr);
+		Desktop::focusState()->fullWindowFocus(nullptr);
 		this->raiseToTop();
 
 		if (warp) Hy3Layout::warpCursorToBox(this->position, this->size);
@@ -214,11 +216,12 @@ PHLWINDOW Hy3Node::bringToTop() {
 		return nullptr;
 	}
 	}
+	return nullptr;
 }
 
 void Hy3Node::focusWindow() {
 	auto window = this->bringToTop();
-	if (window != nullptr) g_pCompositor->focusWindow(window);
+	if (window != nullptr) Desktop::focusState()->fullWindowFocus(window);
 }
 
 void markGroupFocusedRecursive(Hy3GroupData& group) {
@@ -277,6 +280,7 @@ Hy3Node* Hy3Node::getFocusedNode(bool ignore_group_focus, bool stop_at_expanded)
 		}
 	}
 	}
+	return nullptr;
 }
 
 bool Hy3Node::isIndirectlyFocused() {
@@ -343,8 +347,8 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 
 		Hy3Node fake_node = {
 		    .data = window,
-		    .position = monitor->m_position + monitor->m_reservedTopLeft,
-		    .size = monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight,
+		    .position = monitor->m_position + Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top()),
+		    .size = monitor->m_size - Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top()) - Vector2D(monitor->m_reservedArea.right(), monitor->m_reservedArea.bottom()),
 		    .gap_topleft_offset = gap_topleft_offset,
 		    .gap_bottomright_offset = gap_bottomright_offset,
 		    .workspace = this->workspace,
@@ -375,7 +379,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 
 	auto& group = this->data.as_group();
 
-	double constraint;
+	double constraint = 0.0;
 	switch (group.layout) {
 	case Hy3GroupLayout::SplitH:
 		constraint = tsize.x - gap_topleft_offset.x - gap_bottomright_offset.x;
@@ -587,7 +591,7 @@ void Hy3Node::updateTabBarRecursive() {
 void Hy3Node::updateDecos() {
 	switch (this->data.type()) {
 	case Hy3NodeType::Window:
-		g_pCompositor->updateWindowAnimatedDecorationValues(this->data.as_window());
+		this->data.as_window()->updateDecorationValues();
 		break;
 	case Hy3NodeType::Group:
 		for (auto* child: this->data.as_group().children) {
@@ -633,6 +637,7 @@ bool Hy3Node::isUrgent() {
 
 		return false;
 	}
+	return false;
 }
 
 void Hy3Node::setHidden(bool hidden) {
