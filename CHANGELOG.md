@@ -1,5 +1,12 @@
 # Changelog
 
+# hl0.53.0 and before
+
+- Add hy3:equalize dispatcher
+- Update dispatchers to use V2 API
+- Replace SelectionHook with layout render hints
+- Various bug fixes and compatibility updates
+
 # hl0.52.0 and before
 
 - Added `active_alt_monitor` tab bar color options.
