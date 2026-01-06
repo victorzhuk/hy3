@@ -1,5 +1,9 @@
 # Changelog
 
+# hl0.53.1 and before
+
+- Only compatibility fixes.
+
 # hl0.53.0 and before
 
 - Add hy3:equalize dispatcher
